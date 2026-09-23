@@ -88,21 +88,6 @@ const LegalPageAnimations = () => {
         });
       }
 
-      const cta = pageSections[2]?.firstElementChild;
-      if (cta) {
-        gsap.fromTo(
-          cta,
-          { autoAlpha: 0, y: 30, scale: 0.985 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.75,
-            ease: "power3.out",
-            scrollTrigger: { trigger: cta, start: "top 85%", once: true },
-          }
-        );
-      }
     }, root);
 
     return () => context.revert();
