@@ -58,12 +58,12 @@ export default function EntityPage() {
             Back
           </button>
 
-          <div className="mx-auto mt-7 max-w-[575px]">
+          <div className="mx-auto mt-7 max-w-[675px]">
             <header className="text-center">
               <h1 className="text-[30px] font-bold leading-tight text-[#111526] sm:text-[34px]">
                 Setup Options
               </h1>
-              <p className="mx-auto mt-3 max-w-[570px] text-sm leading-5 text-[#6c6f78]">
+              <p className="mx-auto mt-3 max-w-[570px]  leading-5 text-[#6B6B6B] text-base">
                 Choose the path that fits how you prefer to work. Both options deliver the same
                 fully configured system.
               </p>
@@ -81,13 +81,13 @@ export default function EntityPage() {
                       <span className="font-normal text-[#5f7ff0]">{option.badge}</span>
                     )}
                   </h2>
-                  <p className="mt-2 border-y border-[#e2e3e8] py-2.5 text-[11px] font-medium leading-4 text-[#252a3b]">
+                  <p className="mt-2 border-y border-[#e2e3e8] py-2.5 text-[12px] font-medium leading-4 text-[#252a3b]">
                     {option.description}
                   </p>
 
                   <ul className="flex-1 space-y-1 py-4">
                     {option.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-1.5 text-xs text-[#24293b]">
+                      <li key={feature} className="flex items-start gap-1.5 text-sm text-[#24293b]">
                         <Check
                           aria-hidden="true"
                           strokeWidth={2.5}
@@ -103,7 +103,7 @@ export default function EntityPage() {
                   </p>
                   <button
                     type="button"
-                    className={`mt-2 h-8 w-full rounded-md px-3 text-[11px] font-medium text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2 ${option.buttonClass}`}
+                    className={`mt-2 h-10 w-full rounded-[8px] px-3 text-[14px]! font-medium text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2 ${option.buttonClass}`}
                   >
                     {option.action}
                   </button>
@@ -123,7 +123,7 @@ export default function EntityPage() {
           className="relative hidden min-h-[536px] overflow-hidden bg-[#6080f2] md:block"
         >
           <Image
-            src="/auth.png"
+            src="/entity.png"
             alt="Noltra AI product benefits"
             fill
             priority
