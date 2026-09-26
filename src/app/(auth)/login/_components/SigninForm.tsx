@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
@@ -26,17 +25,20 @@ function SigninForm() {
     try {
       setIsLoading(true);
       const response = await signIn("credentials", {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
         redirect: false,
       });
 
-      if (response?.error) throw new Error(response.error);
+      if (response?.error || !response?.ok) {
+        throw new Error(response?.error || "Login failed");
+      }
 
-      toast.success("Login successfully!");
+      toast.success("Login successful!");
       router.push("/profile");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Login failed";
+      toast.error(message === "CredentialsSignin" ? "Invalid email or password" : message);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +156,7 @@ function SigninForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex h-11 w-full items-center justify-center rounded-lg bg-[#5f7ff0] px-4 text-sm font-medium text-white transition hover:bg-[#526fdb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-11 w-full items-center justify-center rounded-[12px] bg-[#5f7ff0] px-4 text-sm font-medium text-white transition hover:bg-[#526fdb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isLoading ? "Signing in..." : "Sign in to Noltra"}
               </button>

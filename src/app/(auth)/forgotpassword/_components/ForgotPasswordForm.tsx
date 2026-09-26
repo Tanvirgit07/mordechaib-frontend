@@ -4,6 +4,7 @@ import { FormEvent, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthPanelAnimation } from "@/lib/useAuthPanelAnimation";
 
 function ForgotPasswordForm() {
+  const router = useRouter();
   const imagePanelRef = useRef<HTMLDivElement>(null);
   const formPanelRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState("");
@@ -18,14 +20,42 @@ function ForgotPasswordForm() {
 
   useAuthPanelAnimation(imagePanelRef, formPanelRef, "left");
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
 
-    window.setTimeout(() => {
+    const normalizedEmail = email.trim();
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail }),
+        }
+      );
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+      };
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to send verification code");
+      }
+
+      toast.success(result.message || "Verification code sent to your email.");
+      router.push(`/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to send verification code";
+      toast.error(message);
+    } finally {
       setIsLoading(false);
-      toast.success("Password reset link sent to your email.");
-    }, 500);
+    }
   };
 
   return (
@@ -57,13 +87,16 @@ function ForgotPasswordForm() {
                 Forgot Password?
               </h1>
               <p className="mx-auto mt-3 max-w-[400px] text-sm leading-5 text-[#4f5363]">
-                If you need help resetting your password, we can help by sending you a link to
-                reset it.
+                If you need help resetting your password, we can help by sending
+                you a link to reset it.
               </p>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <label htmlFor="email" className="mb-2 block text-base font-normal text-[#8B93B8]">
+              <label
+                htmlFor="email"
+                className="mb-2 block text-base font-normal text-[#8B93B8]"
+              >
                 Email address
               </label>
               <Input
@@ -74,13 +107,13 @@ function ForgotPasswordForm() {
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Enter your email......"
                 required
-                className="h-11 border-transparent bg-[#f4f6fd] px-4 text-sm text-[#20263a] shadow-none placeholder:text-[#a6afca] focus-visible:border-[#5f7ff0] focus-visible:bg-white focus-visible:ring-[#5f7ff0]/20"
+                className="h-11 border-transparent bg-[#f4f6fd] px-4 text-sm text-[#20263a] rounded-[12px] shadow-none placeholder:text-[#a6afca] focus-visible:border-[#5f7ff0] focus-visible:bg-white focus-visible:ring-[#5f7ff0]/20"
               />
 
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="mt-9 h-11 w-full bg-[#5f7ff0] text-sm font-medium hover:bg-[#526fdb] focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2"
+                className="mt-9 h-11 w-full bg-[#5f7ff0] text-sm font-medium text-white rounded-[12px] hover:bg-[#526fdb] focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2"
               >
                 {isLoading ? "Sending..." : "Continue"}
               </Button>

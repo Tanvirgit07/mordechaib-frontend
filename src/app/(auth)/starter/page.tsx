@@ -29,7 +29,9 @@ export default function StarterPage() {
               <p className="mt-2 text-[13px] leading-5 text-[#737783] sm:text-sm">Launch your entire AI workforce in 48 hours - done for you.</p>
             </header>
 
-            <BookingCalendar onNext={() => router.push("/entity")} />
+            <BookingCalendar
+              onNext={(date) => router.push(`/starter-dateslot?date=${date}`)}
+            />
           </div>
         </div>
 

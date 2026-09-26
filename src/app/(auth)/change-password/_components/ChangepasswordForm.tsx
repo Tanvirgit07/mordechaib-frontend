@@ -4,20 +4,23 @@ import { FormEvent, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthPanelAnimation } from "@/lib/useAuthPanelAnimation";
 
 function ChangePasswordForm() {
+  const router = useRouter();
   const imagePanelRef = useRef<HTMLDivElement>(null);
   const formPanelRef = useRef<HTMLDivElement>(null);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useAuthPanelAnimation(imagePanelRef, formPanelRef, "left");
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (newPassword !== confirmPassword) {
@@ -25,7 +28,49 @@ function ChangePasswordForm() {
       return;
     }
 
-    toast.success("Password changed successfully");
+    const resetToken = localStorage.getItem("resetToken");
+
+    if (!resetToken) {
+      toast.error("Reset session is missing. Please verify your email again.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-password-reset-token": resetToken,
+          },
+          body: JSON.stringify({ newPassword }),
+        }
+      );
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string | string[];
+      };
+      const message = Array.isArray(result.message)
+        ? result.message.join(", ")
+        : result.message;
+
+      if (!response.ok || !result.success) {
+        throw new Error(message || "Password reset failed");
+      }
+
+      localStorage.removeItem("resetToken");
+      toast.success(message || "Password changed successfully");
+      router.push("/login");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Password reset failed";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,9 +128,10 @@ function ChangePasswordForm() {
 
               <button
                 type="submit"
-                className="mt-7 flex h-11 w-full items-center justify-center rounded-lg bg-[#5f7ff0] px-4 text-sm font-medium text-white transition hover:bg-[#526fdb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2"
+                disabled={isLoading}
+                className="mt-7 flex h-11 w-full items-center justify-center rounded-[12px] bg-[#5f7ff0] px-4 text-sm font-medium text-white transition hover:bg-[#526fdb] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2"
               >
-                Change Password
+                {isLoading ? "Changing..." : "Change Password"}
               </button>
             </form>
           </div>
@@ -144,7 +190,7 @@ function PasswordField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Min. 8 characters"
-          className="h-11 w-full rounded-lg border border-transparent bg-[#f4f6fd] pl-10 pr-11 text-sm text-[#20263a] outline-none transition placeholder:text-[#a6afca] focus:border-[#5f7ff0] focus:bg-white focus:ring-2 focus:ring-[#5f7ff0]/15"
+          className="h-11 w-full rounded-[12px] border border-transparent bg-[#f4f6fd] pl-10 pr-11 text-sm text-[#20263a] outline-none transition placeholder:text-[#a6afca] focus:border-[#5f7ff0] focus:bg-white focus:ring-2 focus:ring-[#5f7ff0]/15"
           required
         />
         <button

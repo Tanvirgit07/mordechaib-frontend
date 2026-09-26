@@ -4,15 +4,20 @@ import { FormEvent, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuthPanelAnimation } from "@/lib/useAuthPanelAnimation";
 
 const fieldClassName =
-  "h-11 w-full rounded-lg border border-transparent bg-[#f4f6fd] px-4 text-sm text-[#20263a] outline-none transition placeholder:text-[#a6afca] focus:border-[#5f7ff0] focus:bg-white focus:ring-2 focus:ring-[#5f7ff0]/15";
+  "h-11 w-full rounded-[12px]-lg border border-transparent bg-[#f4f6fd] px-4 text-sm text-[#20263a] outline-none transition placeholder:text-[#a6afca] focus:border-[#5f7ff0] focus:bg-white focus:ring-2 focus:ring-[#5f7ff0]/15";
 
 const SignupFrom = () => {
+  const router = useRouter();
   const imagePanelRef = useRef<HTMLDivElement>(null);
   const formPanelRef = useRef<HTMLDivElement>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -23,8 +28,68 @@ const SignupFrom = () => {
 
   useAuthPanelAnimation(imagePanelRef, formPanelRef, "left");
 
+  const registerMutation = useMutation({
+    mutationFn: async () => {
+      const email = formData.email.trim();
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: formData.firstName.trim(),
+            lastName: formData.lastName.trim(),
+            email,
+            password: formData.password,
+            acceptTerms,
+            rememberMe,
+          }),
+        }
+      );
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string | string[];
+        data?: { accessToken?: string };
+      };
+      const message = Array.isArray(result.message)
+        ? result.message.join(", ")
+        : result.message;
+
+      if (!response.ok || !result.success) {
+        throw new Error(message || "Unable to create your account");
+      }
+
+      const accessToken = result.data?.accessToken;
+
+      if (!accessToken) {
+        throw new Error("Access token was not returned. Please try again.");
+      }
+
+      return { accessToken, email, message };
+    },
+    onSuccess: ({ accessToken, email, message }) => {
+      localStorage.setItem("accessToken", accessToken);
+      toast.success(message || "Account created successfully.");
+      router.push(`/email-verification?email=${encodeURIComponent(email)}`);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to create your account. Please try again."
+      );
+    },
+  });
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!acceptTerms) {
+      toast.error("Please accept the terms and conditions.");
+      return;
+    }
+
+    registerMutation.mutate();
   };
 
   const updateField = (field: keyof typeof formData, value: string) => {
@@ -33,7 +98,7 @@ const SignupFrom = () => {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#fbfbfc] px-4 py-8 sm:px-8 lg:px-12">
-      <section className="grid w-full max-w-[1280px] overflow-hidden rounded-[18px] border border-[#e4e5e9] bg-white shadow-[0_3px_12px_rgba(15,23,42,0.12)] md:grid-cols-2">
+      <section className="grid w-full max-w-[1280px] overflow-hidden rounded-[12px]-[18px] border border-[#e4e5e9] bg-white shadow-[0_3px_12px_rgba(15,23,42,0.12)] md:grid-cols-2">
         <div
           ref={formPanelRef}
           className="flex min-h-[610px] items-center justify-center px-6 py-10 sm:px-12 lg:px-16 xl:px-[78px]"
@@ -144,7 +209,7 @@ const SignupFrom = () => {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(event) => setRememberMe(event.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-[#b7bfd6] accent-[#5f7ff0]"
+                    className="h-3.5 w-3.5 rounded-[12px] border-[#b7bfd6] accent-[#5f7ff0]"
                   />
                   Remember me
                 </label>
@@ -156,11 +221,23 @@ const SignupFrom = () => {
                 </Link>
               </div>
 
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-[#8994b3]">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(event) => setAcceptTerms(event.target.checked)}
+                  className="h-3.5 w-3.5 rounded-[12px] border-[#b7bfd6] accent-[#5f7ff0]"
+                  required
+                />
+                I accept the terms and conditions
+              </label>
+
               <button
                 type="submit"
-                className="flex h-11 w-full items-center justify-center rounded-lg bg-[#5f7ff0] px-4 text-sm font-medium text-white transition hover:bg-[#526fdb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2"
+                disabled={registerMutation.isPending}
+                className="flex h-11 w-full items-center justify-center rounded-[12px] bg-[#5f7ff0] px-4 text-sm font-medium text-white transition hover:bg-[#526fdb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Continue
+                {registerMutation.isPending ? "Creating account..." : "Continue"}
               </button>
             </form>
 

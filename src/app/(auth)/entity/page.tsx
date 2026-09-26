@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check } from "lucide-react";
 import { useAuthPanelAnimation } from "@/lib/useAuthPanelAnimation";
+import { SetupPackageModal } from "./_components/SetupPackageModal";
 
 const setupOptions = [
   {
@@ -20,6 +21,7 @@ const setupOptions = [
     ],
     note: "You can complete everything yourself",
     action: "I’ll Set It Up Myself",
+    href: "/profile",
     buttonClass: "bg-[#5f7ff0] hover:bg-[#526fdb]",
   },
   {
@@ -34,6 +36,7 @@ const setupOptions = [
     ],
     note: "Starter and Growth are free - we help Customers with Setup. Only Enterprise is Paid for $197",
     action: "Book Integration Call",
+    href: undefined,
     buttonClass: "bg-[#d148c4] hover:bg-[#bb3caf]",
   },
 ];
@@ -42,6 +45,8 @@ export default function EntityPage() {
   const router = useRouter();
   const imagePanelRef = useRef<HTMLDivElement>(null);
   const formPanelRef = useRef<HTMLDivElement>(null);
+  const [packageModalOpen, setPackageModalOpen] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
 
   useAuthPanelAnimation(imagePanelRef, formPanelRef, "left");
 
@@ -103,6 +108,13 @@ export default function EntityPage() {
                   </p>
                   <button
                     type="button"
+                    onClick={() => {
+                      if (option.href) {
+                        router.push(option.href);
+                      } else {
+                        setPackageModalOpen(true);
+                      }
+                    }}
                     className={`mt-2 h-10 w-full rounded-[8px] px-3 text-[14px]! font-medium text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5f7ff0] focus-visible:ring-offset-2 ${option.buttonClass}`}
                   >
                     {option.action}
@@ -132,6 +144,13 @@ export default function EntityPage() {
           />
         </div>
       </section>
+
+      <SetupPackageModal
+        open={packageModalOpen}
+        onOpenChange={setPackageModalOpen}
+        selectedPackageId={selectedPackageId}
+        onSelect={setSelectedPackageId}
+      />
     </main>
   );
 }

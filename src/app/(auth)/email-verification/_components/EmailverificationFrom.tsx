@@ -18,10 +18,6 @@ type VerifyEmailFormProps = {
 type VerifyEmailResponse = {
   success: boolean;
   message?: string | string[];
-  data?: {
-    resetToken?: string;
-    expiresIn?: number;
-  };
 };
 
 function VerifyEmailForm({ email }: VerifyEmailFormProps) {
@@ -36,7 +32,7 @@ function VerifyEmailForm({ email }: VerifyEmailFormProps) {
   const verifyEmailMutation = useMutation({
     mutationFn: async (code: string) => {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/verify-reset-otp`,
+        `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/auth/verify-email`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -52,18 +48,11 @@ function VerifyEmailForm({ email }: VerifyEmailFormProps) {
         throw new Error(message || "Email verification failed");
       }
 
-      const resetToken = result.data?.resetToken;
-
-      if (!resetToken) {
-        throw new Error("Reset token was not returned. Please try again.");
-      }
-
-      return { ...result, message, resetToken };
+      return message;
     },
-    onSuccess: (result) => {
-      localStorage.setItem("resetToken", result.resetToken);
-      toast.success(result.message || "Email verified successfully.");
-      router.push("/change-password");
+    onSuccess: (message) => {
+      toast.success(message || "Email verified successfully.");
+      router.push("/entity");
     },
     onError: (error) => {
       toast.error(
